@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Coins, TrendingUp, Shield, Zap } from "lucide-react";
+import { Send, Bot, User, Coins, Zap, Key, AlertCircle } from "lucide-react";
+import { callOpenAI, type AIResponse } from "@/utils/aiService";
 
 interface Message {
   id: string;
@@ -27,6 +27,8 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   const quickPrompts = [
     "What is OMEMEX token?",
@@ -37,55 +39,7 @@ const Chat = () => {
     "Best AI crypto tokens 2024"
   ];
 
-  const generateAIResponse = (query: string): Message => {
-    const responses: { [key: string]: string } = {
-      omemex: "🚀 OMEMEX is a wrapped token on the OMAX Chain, part of the MemeX ecosystem! It's currently trading and provides users with access to DeFi features on the OMAX network. The token offers cross-chain functionality and is designed for fast, low-cost transactions. Contract address: 0xc84e...095b. You can track it on GeckoTerminal. As with all crypto investments, please DYOR and invest responsibly! 💎",
-      amemex: "🌊 AMEMEX is the bridged version of MemeX token on the Areon Network! This allows MemeX ecosystem users to interact with Areon's DeFi protocols while maintaining their token exposure. It features cross-chain capabilities and low transaction fees. Contract: 0x6608...ffc8. Currently listed on GeckoTerminal for live tracking. Remember: crypto investments are risky! 🔗",
-      bitcoin: "₿ Bitcoin is currently showing mixed signals. Technical analysis suggests support around $42K with resistance at $45K. The recent ETF approvals are bullish long-term, but short-term volatility remains high. Risk level: MEDIUM. Consider DCA strategy and only invest what you can afford to lose. 📊",
-      defi: "🔗 DeFi (Decentralized Finance) lets you do banking without banks! You can lend, borrow, trade, and earn yield using smart contracts. Think of it as traditional finance but on blockchain - more accessible but also more risky. Popular DeFi protocols include Uniswap, Aave, and Compound. Always check smart contract audits! 🏦",
-      scam: "🚨 Common crypto scam red flags: 1) Promises of guaranteed returns 2) Pressure to invest quickly 3) No clear team/roadmap 4) Fake celebrity endorsements 5) Asking for private keys. Always verify contracts on Etherscan, check liquidity locks, and use tools like our Scam Radar! Trust but verify. 🛡️",
-      ai: "🤖 Top AI crypto tokens to watch: 1) $FET (Fetch.ai) - AI agents 2) $OCEAN (Ocean Protocol) - Data marketplace 3) $AGIX (SingularityNET) - AI services 4) OMEMEX & AMEMEX (our ecosystem!) - Crypto intelligence. AI + crypto is exploding with real utility. Research fundamentals, not just hype! 🧠"
-    };
-
-    const queryLower = query.toLowerCase();
-    let response = "🤔 I'm analyzing your question... Based on current market data and my AI analysis, I'd recommend doing thorough research (DYOR) and considering your risk tolerance. Would you like me to break down any specific aspect of your question?";
-    let detectedToken = "";
-    let confidence = 75;
-
-    if (queryLower.includes("omemex")) {
-      response = responses.omemex;
-      detectedToken = "OMEMEX";
-      confidence = 95;
-    } else if (queryLower.includes("amemex")) {
-      response = responses.amemex;
-      detectedToken = "AMEMEX";
-      confidence = 95;
-    } else if (queryLower.includes("bitcoin") || queryLower.includes("btc")) {
-      response = responses.bitcoin;
-      detectedToken = "BTC";
-      confidence = 90;
-    } else if (queryLower.includes("defi")) {
-      response = responses.defi;
-      confidence = 88;
-    } else if (queryLower.includes("scam")) {
-      response = responses.scam;
-      confidence = 92;
-    } else if (queryLower.includes("ai") && queryLower.includes("token")) {
-      response = responses.ai;
-      confidence = 87;
-    }
-
-    return {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: response,
-      timestamp: new Date(),
-      tokenSymbol: detectedToken,
-      aiConfidence: confidence
-    };
-  };
-
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -96,15 +50,49 @@ const Chat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(input);
-      setMessages(prev => [...prev, aiResponse]);
+    try {
+      let aiResponse: AIResponse;
+      
+      if (apiKey) {
+        // Use real OpenAI API
+        aiResponse = await callOpenAI(currentInput, apiKey);
+      } else {
+        // Fallback to scripted responses
+        const fallbackResponse = generateAIResponse(currentInput);
+        aiResponse = {
+          content: fallbackResponse.content,
+          tokenSymbol: fallbackResponse.tokenSymbol,
+          aiConfidence: fallbackResponse.aiConfidence || 75
+        };
+      }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: aiResponse.content,
+        timestamp: new Date(),
+        tokenSymbol: aiResponse.tokenSymbol,
+        aiConfidence: aiResponse.aiConfidence
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "🚨 Sorry, I encountered an error processing your request. Please check your API key and try again, or I can provide basic responses without the API.",
+        timestamp: new Date(),
+        aiConfidence: 0
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleQuickPrompt = (prompt: string) => {
@@ -128,6 +116,42 @@ const Chat = () => {
         <p className="text-muted-foreground">
           Powered by $MEMEX • Ask about any token, get instant analysis
         </p>
+        
+        {/* API Key Section */}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+            className="text-xs"
+          >
+            <Key className="w-3 h-3 mr-1" />
+            {apiKey ? "✅ AI Connected" : "Connect OpenAI"}
+          </Button>
+        </div>
+        
+        {showApiKeyInput && (
+          <Card className="max-w-md mx-auto">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Enter your OpenAI API key for enhanced AI responses</span>
+                </div>
+                <Input
+                  type="password"
+                  placeholder="sk-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your API key is stored locally and used only for your requests.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Quick Prompts */}
@@ -217,7 +241,9 @@ const Chat = () => {
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                  <span className="text-sm text-muted-foreground">MI is thinking...</span>
+                  <span className="text-sm text-muted-foreground">
+                    {apiKey ? "AI is thinking..." : "MI is thinking..."}
+                  </span>
                 </div>
               </CardContent>
             </Card>
