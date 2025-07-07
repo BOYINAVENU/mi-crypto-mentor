@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Coins, Zap, Key, AlertCircle } from "lucide-react";
-import { callOpenAI, type AIResponse } from "@/utils/aiService";
+import { callOpenAI, generateAIResponse, type AIResponse } from "@/utils/aiService";
 
 interface Message {
   id: string;
@@ -62,12 +62,7 @@ const Chat = () => {
         aiResponse = await callOpenAI(currentInput, apiKey);
       } else {
         // Fallback to scripted responses
-        const fallbackResponse = generateAIResponse(currentInput);
-        aiResponse = {
-          content: fallbackResponse.content,
-          tokenSymbol: fallbackResponse.tokenSymbol,
-          aiConfidence: fallbackResponse.aiConfidence || 75
-        };
+        aiResponse = generateAIResponse(currentInput);
       }
 
       const assistantMessage: Message = {
