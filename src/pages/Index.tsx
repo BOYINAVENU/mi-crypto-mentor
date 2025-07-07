@@ -13,6 +13,7 @@ import {
   Zap,
   ArrowRight,
   CheckCircle,
+  Coins,
 } from "lucide-react";
 
 const Index = () => {
@@ -36,9 +37,9 @@ const Index = () => {
       color: "bg-green-500",
     },
     {
-      icon: Users,
-      title: "Community Wisdom",
-      description: "User voting system to rate tokens with MemeX token rewards",
+      icon: Coins,
+      title: "MemeX Integration",
+      description: "Earn $MEMEX rewards for contributing data and using MI intelligence",
       color: "bg-purple-500",
     },
   ];
@@ -47,7 +48,7 @@ const Index = () => {
     {
       title: "For Newcomers",
       examples: [
-        "How do I buy tokens?",
+        "How do I buy $MEMEX tokens?",
         "What's a rug pull?",
         "How do I keep my wallet safe?",
       ],
@@ -56,14 +57,14 @@ const Index = () => {
       title: "For Investors",
       examples: [
         "Is this token safe?",
-        "Will $M reach $0.0005?",
+        "Will $MEMEX reach $0.0005?",
         "What are the best AI tokens?",
       ],
     },
     {
       title: "For MemeX Users",
       examples: [
-        "Earn $M rewards for data",
+        "Earn $MEMEX rewards for data",
         "Fast, cheap transactions",
         "Decentralized intelligence",
       ],
@@ -77,7 +78,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="text-center space-y-8">
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center space-x-4">
               <Badge
                 variant="secondary"
                 className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-0 px-4 py-2"
@@ -85,6 +86,14 @@ const Index = () => {
                 <Brain className="w-4 h-4 mr-2" />
                 Powered by MemeX Intelligence
               </Badge>
+              <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border">
+                <img 
+                  src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+                  alt="MemeX Token" 
+                  className="w-6 h-6 rounded-full"
+                />
+                <span className="font-semibold text-purple-700">$MEMEX</span>
+              </div>
             </div>
 
             <h1 className="text-4xl lg:text-7xl font-bold tracking-tight">
@@ -95,7 +104,7 @@ const Index = () => {
             </h1>
 
             <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Your personal AI crypto analyst. Get instant answers about any token,
+              Your personal AI crypto analyst powered by <strong>$MEMEX</strong>. Get instant answers about any token,
               detect scams, predict prices, and navigate crypto safely.
             </p>
 
@@ -126,9 +135,51 @@ const Index = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Scam detection</span>
+                <span>$MEMEX rewards</span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MemeX Token Highlight Section */}
+      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center text-white">
+            <div className="flex justify-center items-center space-x-3 mb-4">
+              <img 
+                src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+                alt="MemeX Token" 
+                className="w-12 h-12 rounded-full"
+              />
+              <h2 className="text-3xl font-bold">$MEMEX Token</h2>
+            </div>
+            <p className="text-xl mb-6 opacity-90">
+              The native token powering the MemeX ecosystem and MI intelligence platform
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white/10 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Earn Rewards</h3>
+                <p className="text-sm opacity-80">Get $MEMEX for contributing data and using MI</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Fast Transactions</h3>
+                <p className="text-sm opacity-80">Low fees on the MemeX blockchain</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Governance</h3>
+                <p className="text-sm opacity-80">Vote on platform improvements and features</p>
+              </div>
+            </div>
+            <a
+              href="https://memextoken.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+                Learn More About $MEMEX
+              </Button>
+            </a>
           </div>
         </div>
       </section>
@@ -203,11 +254,18 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-            Ready to get crypto smart?
-          </h2>
+          <div className="flex justify-center items-center space-x-3 mb-6">
+            <img 
+              src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+              alt="MemeX Token" 
+              className="w-8 h-8 rounded-full"
+            />
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              Ready to get crypto smart?
+            </h2>
+          </div>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of users who trust MI for their crypto decisions
+            Join thousands of users who trust MI for their crypto decisions and earn $MEMEX rewards
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/chat">
@@ -222,7 +280,7 @@ const Index = () => {
               rel="noopener noreferrer"
             >
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent border-white text-white hover:bg-white hover:text-purple-600">
-                Learn about MemeX
+                Learn about $MEMEX
               </Button>
             </a>
           </div>

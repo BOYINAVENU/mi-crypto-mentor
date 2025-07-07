@@ -23,13 +23,21 @@ export function NavBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
               <Brain className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               MI
             </span>
+            <div className="hidden sm:flex items-center space-x-2 bg-purple-50 dark:bg-purple-950 rounded-full px-3 py-1 border">
+              <img 
+                src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+                alt="MemeX Token" 
+                className="w-4 h-4 rounded-full"
+              />
+              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">$MEMEX</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -52,6 +60,20 @@ export function NavBar() {
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center space-x-4">
+            <a
+              href="https://memextoken.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="flex items-center space-x-2">
+                <img 
+                  src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+                  alt="MemeX Token" 
+                  className="w-4 h-4 rounded-full"
+                />
+                <span>Get $MEMEX</span>
+              </Button>
+            </a>
             <a
               href="https://t.me/MemeXGloball"
               target="_blank"
@@ -97,6 +119,21 @@ export function NavBar() {
                   </Link>
                 );
               })}
+              <a
+                href="https://memextoken.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2"
+              >
+                <Button variant="outline" className="w-full">
+                  <img 
+                    src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+                    alt="MemeX Token" 
+                    className="w-4 h-4 rounded-full mr-2"
+                  />
+                  Get $MEMEX
+                </Button>
+              </a>
               <a
                 href="https://t.me/MemeXGloball"
                 target="_blank"

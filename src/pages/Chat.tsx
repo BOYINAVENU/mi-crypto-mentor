@@ -1,219 +1,254 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Brain, User, Sparkles, TrendingUp, Shield, HelpCircle } from "lucide-react";
+import { Send, Bot, User, Coins, TrendingUp, Shield, Zap } from "lucide-react";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  tokenSymbol?: string;
+  aiConfidence?: number;
 }
 
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
+      id: "welcome",
       role: "assistant",
-      content: "Hi! I'm MI, your personal crypto intelligence assistant. Ask me anything about tokens, trading, or crypto security. What would you like to know?",
+      content: "👋 Hi! I'm MI, your personal crypto AI analyst powered by $MEMEX. Ask me about any token, crypto trends, or get help with trading decisions. I can analyze risks, predict prices, and help you stay safe in crypto!",
       timestamp: new Date(),
-    },
+      aiConfidence: 100
+    }
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const exampleQuestions = [
-    { text: "What is Bitcoin?", icon: TrendingUp },
-    { text: "Is $PEPE safe to buy?", icon: Shield },
-    { text: "How do I avoid rug pulls?", icon: HelpCircle },
-    { text: "Explain DeFi to a beginner", icon: Brain },
+  const quickPrompts = [
+    "What is $MEMEX token?",
+    "Is Bitcoin safe to buy now?",
+    "Explain DeFi in simple terms",
+    "How to spot crypto scams?",
+    "Best AI crypto tokens 2024",
+    "Will $MEMEX reach $0.001?"
   ];
 
-  const generateResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes("bitcoin") || input.includes("btc")) {
-      return "Bitcoin (BTC) is the first and largest cryptocurrency by market cap. Created in 2009 by Satoshi Nakamoto, it's often called 'digital gold' and serves as a store of value. Current fundamentals look strong with institutional adoption growing. Always DYOR before investing!";
+  const generateAIResponse = (query: string): Message => {
+    const responses: { [key: string]: string } = {
+      memex: "🚀 $MEMEX is the native token of the MemeX ecosystem! It powers MI (that's me!), enables fast transactions, and rewards users for contributing data. Current features include governance voting, earning rewards for using MI, and low-fee transactions on the MemeX chain. Based on the tokenomics and ecosystem growth, $MEMEX has strong potential for growth as more users adopt MI and the MemeX platform. Remember: DYOR and crypto is risky! 💎",
+      bitcoin: "₿ Bitcoin is currently showing mixed signals. Technical analysis suggests support around $42K with resistance at $45K. The recent ETF approvals are bullish long-term, but short-term volatility remains high. Risk level: MEDIUM. Consider DCA strategy and only invest what you can afford to lose. 📊",
+      defi: "🔗 DeFi (Decentralized Finance) lets you do banking without banks! You can lend, borrow, trade, and earn yield using smart contracts. Think of it as traditional finance but on blockchain - more accessible but also more risky. Popular DeFi protocols include Uniswap, Aave, and Compound. Always check smart contract audits! 🏦",
+      scam: "🚨 Common crypto scam red flags: 1) Promises of guaranteed returns 2) Pressure to invest quickly 3) No clear team/roadmap 4) Fake celebrity endorsements 5) Asking for private keys. Always verify contracts on Etherscan, check liquidity locks, and use tools like our Scam Radar! Trust but verify. 🛡️",
+      ai: "🤖 Top AI crypto tokens to watch: 1) $FET (Fetch.ai) - AI agents 2) $OCEAN (Ocean Protocol) - Data marketplace 3) $AGIX (SingularityNET) - AI services 4) $MEMEX (our own!) - Crypto intelligence. AI + crypto is exploding with real utility. Research fundamentals, not just hype! 🧠",
+      price: "📈 Price predictions for $MEMEX: Based on ecosystem growth, user adoption, and tokenomics, conservative estimates suggest potential 2-5x growth in 2024 if adoption continues. Key catalysts: MI user growth, new partnerships, DeFi integrations. Remember: This is not financial advice! Market cap and utility drive value. 💰"
+    };
+
+    const queryLower = query.toLowerCase();
+    let response = "🤔 I'm analyzing your question... Based on current market data and my AI analysis, I'd recommend doing thorough research (DYOR) and considering your risk tolerance. Would you like me to break down any specific aspect of your question?";
+    let detectedToken = "";
+    let confidence = 75;
+
+    if (queryLower.includes("memex") || queryLower.includes("$memex")) {
+      response = responses.memex;
+      detectedToken = "MEMEX";
+      confidence = 95;
+    } else if (queryLower.includes("bitcoin") || queryLower.includes("btc")) {
+      response = responses.bitcoin;
+      detectedToken = "BTC";
+      confidence = 90;
+    } else if (queryLower.includes("defi")) {
+      response = responses.defi;
+      confidence = 88;
+    } else if (queryLower.includes("scam")) {
+      response = responses.scam;
+      confidence = 92;
+    } else if (queryLower.includes("ai") && queryLower.includes("token")) {
+      response = responses.ai;
+      confidence = 87;
+    } else if (queryLower.includes("price") || queryLower.includes("reach")) {
+      response = responses.price;
+      detectedToken = "MEMEX";
+      confidence = 80;
     }
-    
-    if (input.includes("pepe") || input.includes("meme")) {
-      return "PEPE is a meme token with high volatility. ⚠️ Risk Assessment: Meme coins are extremely risky - prices can drop 90%+ quickly. Check liquidity, holder distribution, and be prepared to lose your investment. Only invest what you can afford to lose!";
-    }
-    
-    if (input.includes("rug pull") || input.includes("scam")) {
-      return "🚨 How to avoid rug pulls:\n\n1. Check if liquidity is locked\n2. Verify team is doxxed\n3. Look for audit reports\n4. Check holder distribution (avoid if 1 wallet holds >20%)\n5. Test small amounts first\n6. Use tools like GoPlus for quick security checks\n\nRed flags: Anonymous teams, no locked liquidity, excessive marketing promises.";
-    }
-    
-    if (input.includes("defi")) {
-      return "DeFi (Decentralized Finance) lets you do banking without banks! Key concepts:\n\n💰 Lending/Borrowing: Earn interest or get loans\n🔄 DEXs: Trade without centralized exchanges\n🏦 Yield Farming: Earn rewards by providing liquidity\n🎯 Staking: Lock tokens to secure networks\n\nStart with established protocols like Uniswap, Aave, or Compound. Always understand impermanent loss and smart contract risks!";
-    }
-    
-    if (input.includes("safe") || input.includes("security")) {
-      return "🔐 Crypto Safety Checklist:\n\n1. Use hardware wallets for large amounts\n2. Never share private keys/seed phrases\n3. Verify URLs (avoid phishing)\n4. Use 2FA everywhere\n5. Test with small amounts first\n6. Keep software updated\n7. Don't click suspicious links\n\nRemember: In crypto, YOU are the bank. Security is your responsibility!";
-    }
-    
-    return `I'm analyzing "${userInput}" for you... Based on current market data and AI analysis, I'd recommend doing thorough research before making any decisions. Would you like me to check specific metrics like liquidity, holder distribution, or recent price action? Remember: This is not financial advice - always DYOR!`;
+
+    return {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: response,
+      timestamp: new Date(),
+      tokenSymbol: detectedToken,
+      aiConfidence: confidence
+    };
   };
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: input,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput("");
-    setIsTyping(true);
+    setIsLoading(true);
 
     // Simulate AI thinking time
     setTimeout(() => {
-      const response = generateResponse(input);
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
+      const aiResponse = generateAIResponse(input);
+      setMessages(prev => [...prev, aiResponse]);
+      setIsLoading(false);
     }, 1500);
   };
 
-  const handleExampleClick = (question: string) => {
-    setInput(question);
+  const handleQuickPrompt = (prompt: string) => {
+    setInput(prompt);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 h-[calc(100vh-8rem)]">
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="text-center py-6 border-b">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold">Ask MI Anything</h1>
-          </div>
-          <p className="text-muted-foreground">Your AI crypto intelligence assistant</p>
+    <div className="max-w-4xl mx-auto p-6 h-screen flex flex-col">
+      {/* Header */}
+      <div className="text-center space-y-4 mb-6">
+        <div className="flex justify-center items-center space-x-3">
+          <img 
+            src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
+            alt="MemeX Token" 
+            className="w-8 h-8 rounded-full"
+          />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            MI - Your Crypto AI Analyst
+          </h1>
         </div>
+        <p className="text-muted-foreground">
+          Powered by $MEMEX • Ask about any token, get instant analysis
+        </p>
+      </div>
 
-        {/* Example Questions */}
-        {messages.length <= 1 && (
-          <div className="py-6">
-            <p className="text-sm text-muted-foreground mb-4 text-center">Try asking:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {exampleQuestions.map((question, index) => {
-                const Icon = question.icon;
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="h-auto p-3 text-left justify-start"
-                    onClick={() => handleExampleClick(question.text)}
-                  >
-                    <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span className="text-sm">{question.text}</span>
-                  </Button>
-                );
-              })}
+      {/* Quick Prompts */}
+      {messages.length <= 1 && (
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground mb-3">Try asking:</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {quickPrompts.map((prompt, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickPrompt(prompt)}
+                className="text-left h-auto p-3 whitespace-normal"
+              >
+                {prompt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex space-x-3 ${
+              message.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`flex space-x-3 max-w-[80%] ${
+                message.role === "user" ? "flex-row-reverse space-x-reverse" : ""
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  message.role === "user"
+                    ? "bg-blue-500"
+                    : "bg-gradient-to-r from-purple-500 to-pink-500"
+                }`}
+              >
+                {message.role === "user" ? (
+                  <User className="w-4 h-4 text-white" />
+                ) : (
+                  <Bot className="w-4 h-4 text-white" />
+                )}
+              </div>
+              <Card
+                className={`${
+                  message.role === "user"
+                    ? "bg-blue-500 text-white"
+                    : "bg-background border"
+                }`}
+              >
+                <CardContent className="p-4">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                  {message.tokenSymbol && (
+                    <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-muted">
+                      <Badge variant="secondary" className="text-xs">
+                        <Coins className="w-3 h-3 mr-1" />
+                        {message.tokenSymbol}
+                      </Badge>
+                      {message.aiConfidence && (
+                        <Badge variant="outline" className="text-xs">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {message.aiConfidence}% confidence
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
+          </div>
+        ))}
+        
+        {isLoading && (
+          <div className="flex space-x-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <Card className="bg-background border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                  <span className="text-sm text-muted-foreground">MI is thinking...</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 py-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} chat-bubble`}
-            >
-              <div className={`flex space-x-3 max-w-3xl ${message.role === "user" ? "flex-row-reverse space-x-reverse" : ""}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                }`}>
-                  {message.role === "user" ? (
-                    <User className="w-4 h-4" />
-                  ) : (
-                    <Brain className="w-4 h-4" />
-                  )}
-                </div>
-                <Card className={`p-4 ${
-                  message.role === "user" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted"
-                }`}>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {message.content}
-                  </div>
-                  <div className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          ))}
-
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="flex space-x-3 max-w-3xl">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center">
-                  <Brain className="w-4 h-4" />
-                </div>
-                <Card className="p-4 bg-muted">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 animate-pulse" />
-                    <span className="text-sm">MI is thinking...</span>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <div className="border-t pt-4">
-          <div className="flex space-x-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about any crypto token..."
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              className="flex-1"
-              disabled={isTyping}
-            />
-            <Button 
-              onClick={handleSend} 
-              disabled={!input.trim() || isTyping}
-              size="icon"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Not financial advice. Always DYOR. Crypto investments are risky.
-          </p>
-        </div>
       </div>
+
+      {/* Input Area */}
+      <div className="flex space-x-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about any crypto token or trading strategy..."
+          className="flex-1 text-base h-12"
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={isLoading}
+        />
+        <Button
+          onClick={handleSend}
+          disabled={!input.trim() || isLoading}
+          size="lg"
+          className="px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+        >
+          <Send className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Footer Note */}
+      <p className="text-xs text-muted-foreground text-center mt-4">
+        ⚠️ AI responses are for educational purposes only. Not financial advice. DYOR.
+      </p>
     </div>
   );
 };
