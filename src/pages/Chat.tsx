@@ -20,7 +20,7 @@ const Chat = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "👋 Hi! I'm MI, your personal crypto AI analyst powered by $MEMEX. Ask me about any token, crypto trends, or get help with trading decisions. I can analyze risks, predict prices, and help you stay safe in crypto!",
+      content: "👋 Hi! I'm MI, your personal crypto AI analyst powered by MemeX ecosystem. Ask me about any token, crypto trends, or get help with trading decisions. I can analyze OMEMEX, AMEMEX, and other tokens, predict prices, and help you stay safe in crypto!",
       timestamp: new Date(),
       aiConfidence: 100
     }
@@ -29,22 +29,22 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const quickPrompts = [
-    "What is $MEMEX token?",
+    "What is OMEMEX token?",
+    "Tell me about AMEMEX",
     "Is Bitcoin safe to buy now?",
     "Explain DeFi in simple terms",
     "How to spot crypto scams?",
-    "Best AI crypto tokens 2024",
-    "Will $MEMEX reach $0.001?"
+    "Best AI crypto tokens 2024"
   ];
 
   const generateAIResponse = (query: string): Message => {
     const responses: { [key: string]: string } = {
-      memex: "🚀 $MEMEX is the native token of the MemeX ecosystem! It powers MI (that's me!), enables fast transactions, and rewards users for contributing data. Current features include governance voting, earning rewards for using MI, and low-fee transactions on the MemeX chain. Based on the tokenomics and ecosystem growth, $MEMEX has strong potential for growth as more users adopt MI and the MemeX platform. Remember: DYOR and crypto is risky! 💎",
+      omemex: "🚀 OMEMEX is a wrapped token on the OMAX Chain, part of the MemeX ecosystem! It's currently trading and provides users with access to DeFi features on the OMAX network. The token offers cross-chain functionality and is designed for fast, low-cost transactions. Contract address: 0xc84e...095b. You can track it on GeckoTerminal. As with all crypto investments, please DYOR and invest responsibly! 💎",
+      amemex: "🌊 AMEMEX is the bridged version of MemeX token on the Areon Network! This allows MemeX ecosystem users to interact with Areon's DeFi protocols while maintaining their token exposure. It features cross-chain capabilities and low transaction fees. Contract: 0x6608...ffc8. Currently listed on GeckoTerminal for live tracking. Remember: crypto investments are risky! 🔗",
       bitcoin: "₿ Bitcoin is currently showing mixed signals. Technical analysis suggests support around $42K with resistance at $45K. The recent ETF approvals are bullish long-term, but short-term volatility remains high. Risk level: MEDIUM. Consider DCA strategy and only invest what you can afford to lose. 📊",
       defi: "🔗 DeFi (Decentralized Finance) lets you do banking without banks! You can lend, borrow, trade, and earn yield using smart contracts. Think of it as traditional finance but on blockchain - more accessible but also more risky. Popular DeFi protocols include Uniswap, Aave, and Compound. Always check smart contract audits! 🏦",
       scam: "🚨 Common crypto scam red flags: 1) Promises of guaranteed returns 2) Pressure to invest quickly 3) No clear team/roadmap 4) Fake celebrity endorsements 5) Asking for private keys. Always verify contracts on Etherscan, check liquidity locks, and use tools like our Scam Radar! Trust but verify. 🛡️",
-      ai: "🤖 Top AI crypto tokens to watch: 1) $FET (Fetch.ai) - AI agents 2) $OCEAN (Ocean Protocol) - Data marketplace 3) $AGIX (SingularityNET) - AI services 4) $MEMEX (our own!) - Crypto intelligence. AI + crypto is exploding with real utility. Research fundamentals, not just hype! 🧠",
-      price: "📈 Price predictions for $MEMEX: Based on ecosystem growth, user adoption, and tokenomics, conservative estimates suggest potential 2-5x growth in 2024 if adoption continues. Key catalysts: MI user growth, new partnerships, DeFi integrations. Remember: This is not financial advice! Market cap and utility drive value. 💰"
+      ai: "🤖 Top AI crypto tokens to watch: 1) $FET (Fetch.ai) - AI agents 2) $OCEAN (Ocean Protocol) - Data marketplace 3) $AGIX (SingularityNET) - AI services 4) OMEMEX & AMEMEX (our ecosystem!) - Crypto intelligence. AI + crypto is exploding with real utility. Research fundamentals, not just hype! 🧠"
     };
 
     const queryLower = query.toLowerCase();
@@ -52,9 +52,13 @@ const Chat = () => {
     let detectedToken = "";
     let confidence = 75;
 
-    if (queryLower.includes("memex") || queryLower.includes("$memex")) {
-      response = responses.memex;
-      detectedToken = "MEMEX";
+    if (queryLower.includes("omemex")) {
+      response = responses.omemex;
+      detectedToken = "OMEMEX";
+      confidence = 95;
+    } else if (queryLower.includes("amemex")) {
+      response = responses.amemex;
+      detectedToken = "AMEMEX";
       confidence = 95;
     } else if (queryLower.includes("bitcoin") || queryLower.includes("btc")) {
       response = responses.bitcoin;
@@ -69,10 +73,6 @@ const Chat = () => {
     } else if (queryLower.includes("ai") && queryLower.includes("token")) {
       response = responses.ai;
       confidence = 87;
-    } else if (queryLower.includes("price") || queryLower.includes("reach")) {
-      response = responses.price;
-      detectedToken = "MEMEX";
-      confidence = 80;
     }
 
     return {

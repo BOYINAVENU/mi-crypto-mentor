@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, TrendingUp, TrendingDown, DollarSign, Users, Shield, AlertTriangle } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, DollarSign, Users, Shield, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface TokenData {
   symbol: string;
@@ -16,6 +16,10 @@ interface TokenData {
   holders: string;
   riskScore: "low" | "medium" | "high";
   description: string;
+  chain: string;
+  contractAddress?: string;
+  poolAddress?: string;
+  geckoTerminalUrl?: string;
 }
 
 const TokenSearch = () => {
@@ -23,7 +27,7 @@ const TokenSearch = () => {
   const [searchResults, setSearchResults] = useState<TokenData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock token data
+  // Updated mock token data with real OMEMEX and AMEMEX information
   const mockTokens: TokenData[] = [
     {
       symbol: "BTC",
@@ -34,7 +38,8 @@ const TokenSearch = () => {
       volume: "$28.1B",
       holders: "46.8M",
       riskScore: "low",
-      description: "The original cryptocurrency and digital gold. Established store of value with institutional adoption."
+      description: "The original cryptocurrency and digital gold. Established store of value with institutional adoption.",
+      chain: "Bitcoin Network"
     },
     {
       symbol: "ETH",
@@ -45,7 +50,8 @@ const TokenSearch = () => {
       volume: "$15.2B",
       holders: "108.4M",
       riskScore: "low",
-      description: "World's second-largest cryptocurrency and leading smart contract platform."
+      description: "World's second-largest cryptocurrency and leading smart contract platform.",
+      chain: "Ethereum"
     },
     {
       symbol: "PEPE",
@@ -56,18 +62,38 @@ const TokenSearch = () => {
       volume: "$89.2M",
       holders: "235K",
       riskScore: "high",
-      description: "Popular meme token with high volatility. Extremely risky investment - trade carefully."
+      description: "Popular meme token with high volatility. Extremely risky investment - trade carefully.",
+      chain: "Ethereum"
     },
     {
-      symbol: "MEMEX",
-      name: "MemeX Token",
-      price: "$0.000235",
-      change24h: 8.92,
-      marketCap: "$12.5M",
-      volume: "$1.2M",
-      holders: "15.8K",
+      symbol: "OMEMEX",
+      name: "OMEMEX Token",
+      price: "$0.000127",
+      change24h: 12.34,
+      marketCap: "$3.2M",
+      volume: "$145K",
+      holders: "8.5K",
       riskScore: "medium",
-      description: "Native token of the MemeX ecosystem powering MI crypto intelligence platform."
+      description: "OMEMEX token on OMAX Chain. Part of the MemeX ecosystem with wrapped token functionality.",
+      chain: "OMAX Chain",
+      contractAddress: "0xc84edbf1e3fef5e4583aaa0f818cdfebfcae095b",
+      poolAddress: "0xc84edbf1e3fef5e4583aaa0f818cdfebfcae095b",
+      geckoTerminalUrl: "https://geckoterminal.com/omax-chain/pools/0xc84edbf1e3fef5e4583aaa0f818cdfebfcae095b"
+    },
+    {
+      symbol: "AMEMEX",
+      name: "AMEMEX Token",
+      price: "$0.000089",
+      change24h: -3.67,
+      marketCap: "$1.8M",
+      volume: "$67K",
+      holders: "4.2K",
+      riskScore: "medium",
+      description: "AMEMEX token on Areon Network. Bridged version of MemeX token with cross-chain capabilities.",
+      chain: "Areon Network",
+      contractAddress: "0x6608de6043653256e8286f1da53d377ad41effc8",
+      poolAddress: "0x6608de6043653256e8286f1da53d377ad41effc8",
+      geckoTerminalUrl: "https://geckoterminal.com/areon-network/pools/0x6608de6043653256e8286f1da53d377ad41effc8"
     }
   ];
 
@@ -120,7 +146,7 @@ const TokenSearch = () => {
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by token symbol or name (e.g., BTC, Bitcoin, PEPE)"
+          placeholder="Search by token symbol or name (e.g., BTC, OMEMEX, AMEMEX)"
           className="flex-1 text-lg h-12"
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
@@ -140,7 +166,7 @@ const TokenSearch = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Popular Tokens</h2>
           <div className="flex flex-wrap gap-2">
-            {["BTC", "ETH", "PEPE", "MEMEX"].map((token) => (
+            {["BTC", "ETH", "OMEMEX", "AMEMEX"].map((token) => (
               <Button
                 key={token}
                 variant="outline"
@@ -183,6 +209,9 @@ const TokenSearch = () => {
                         </Badge>
                       </CardTitle>
                       <CardDescription className="text-lg">{token.name}</CardDescription>
+                      <CardDescription className="text-sm text-muted-foreground mt-1">
+                        {token.chain}
+                      </CardDescription>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold">{token.price}</div>
@@ -227,10 +256,32 @@ const TokenSearch = () => {
                           <p className="font-semibold">{token.holders}</p>
                         </div>
                       </div>
+                      {token.contractAddress && (
+                        <div className="flex items-center space-x-2">
+                          <Shield className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Contract</p>
+                            <p className="font-mono text-xs">{token.contractAddress.slice(0, 10)}...</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t space-y-2">
+                    {token.geckoTerminalUrl && (
+                      <a
+                        href={token.geckoTerminalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full"
+                      >
+                        <Button className="w-full" variant="outline">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View on GeckoTerminal
+                        </Button>
+                      </a>
+                    )}
                     <Button className="w-full" variant="outline">
                       View Detailed Analysis
                     </Button>
