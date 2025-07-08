@@ -5,45 +5,31 @@ export interface AIResponse {
   aiConfidence: number;
 }
 
-/** Gemini REST API endpoint */
-const GEMINI_ENDPOINT = (
-    model = "gemini-1.5-pro-latest"
-) =>
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+/** Hugging Face Inference API endpoint */
+const HF_INFERENCE_ENDPOINT = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium";
 
-/** 🔥 Primary function to call Gemini */
-export const callGemini = async (
+/** 🔥 Primary function to call Hugging Face */
+export const callHuggingFace = async (
     prompt: string,
-    apiKey: string,
-    model = "gemini-1.5-pro-latest"
+    apiKey: string
 ): Promise<AIResponse> => {
-  if (!apiKey) throw new Error("Gemini API key is required");
+  if (!apiKey) throw new Error("Hugging Face API key is required");
 
   try {
-    const systemPrompt = `You are a helpful, knowledgeable, and friendly AI assistant. You can help with a wide variety of topics including:
-- General questions and explanations
-- Technology and programming
-- Science and mathematics
-- Creative writing and brainstorming
-- Problem-solving and analysis
-- Educational content
-- And much more!
-
-Please provide helpful, accurate, and engaging responses. If you're not certain about something, let the user know. Always be respectful and professional.`;
-
-    const fullPrompt = `${systemPrompt}\n\nUser question: ${prompt}`;
-
-    const res = await fetch(`${GEMINI_ENDPOINT(model)}?key=${apiKey}`, {
+    const res = await fetch(HF_INFERENCE_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
+        inputs: prompt,
+        parameters: {
+          max_length: 200,
+          temperature: 0.8,
+          do_sample: true,
+          top_p: 0.9
+        }
       }),
     });
 
@@ -51,44 +37,44 @@ Please provide helpful, accurate, and engaging responses. If you're not certain 
       const errorData = await res.json().catch(() => ({}));
       
       if (res.status === 429) {
-        throw new Error("⏱️ API quota exceeded. Please wait a minute and try again, or check your usage at Google AI Studio.");
-      } else if (res.status === 403) {
-        throw new Error("🔑 Invalid API key. Please check your Gemini API key.");
+        throw new Error("⏱️ API quota exceeded. Please wait a minute and try again, or check your usage at Hugging Face.");
+      } else if (res.status === 401) {
+        throw new Error("🔑 Invalid API key. Please check your Hugging Face API key.");
       } else if (res.status === 400) {
         throw new Error("📝 Invalid request format. Please try rephrasing your question.");
       } else {
-        throw new Error(`🚨 API Error (${res.status}): ${errorData.error?.message || res.statusText}`);
+        throw new Error(`🚨 API Error (${res.status}): ${errorData.error || res.statusText}`);
       }
     }
 
     const json = await res.json();
     
     if (json.error) {
-      throw new Error(`Gemini error: ${json.error.message}`);
+      throw new Error(`Hugging Face error: ${json.error}`);
     }
 
-    const content = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const content = json.generated_text || json[0]?.generated_text || "";
     
     if (!content) {
-      throw new Error("No content received from Gemini");
+      throw new Error("No content received from Hugging Face");
     }
 
     return {
       content: content.trim(),
-      aiConfidence: 90,
+      aiConfidence: 85,
     };
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Hugging Face API Error:", error);
     throw error;
   }
 };
 
-/** 🧪 Fallback if no key is provided or Gemini fails */
+/** 🧪 Fallback if no key is provided or Hugging Face fails */
 export const generateMockResponse = (prompt: string): AIResponse => {
   const responses = [
-    `I'd be happy to help with "${prompt}", but I need a Gemini API key to provide detailed responses. You can get one free at Google AI Studio!`,
-    `That's an interesting question about "${prompt}". Please add your Gemini API key to get personalized AI responses.`,
-    `I can see you're asking about "${prompt}". Connect your Gemini API key to unlock my full capabilities!`,
+    `I'd be happy to help with "${prompt}", but I need a Hugging Face API key to provide detailed responses. You can get one free at Hugging Face!`,
+    `That's an interesting question about "${prompt}". Please add your Hugging Face API key to get personalized AI responses.`,
+    `I can see you're asking about "${prompt}". Connect your Hugging Face API key to unlock my full capabilities!`,
   ];
   
   const randomResponse = responses[Math.floor(Math.random() * responses.length)];
