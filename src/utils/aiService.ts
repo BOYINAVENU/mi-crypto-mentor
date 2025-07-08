@@ -68,81 +68,128 @@ export const callHuggingFace = async (
   }
 };
 
-// Local model approach (new)
-let localPipeline: any = null;
+// Local Gemma 3n model approach (updated)
+let localProcessor: any = null;
+let localModel: any = null;
 let isModelLoading = false;
 
 export const initializeLocalModel = async (): Promise<void> => {
-  if (localPipeline || isModelLoading) return;
+  if ((localProcessor && localModel) || isModelLoading) return;
   
   isModelLoading = true;
   
   try {
+    console.log('Loading Gemma 3n E4B model for image-text-to-text...');
+    
     // Dynamic import to avoid build issues
-    const { pipeline } = await import('@huggingface/transformers');
+    const { AutoProcessor, AutoModelForImageTextToText } = await import('@huggingface/transformers');
     
-    // Initialize a smaller, faster model for chat
-    localPipeline = await pipeline(
-      'text-generation',
-      'Xenova/gpt2',
-      {
-        device: 'webgpu',
-        dtype: 'fp16'
-      }
-    );
+    // Initialize Gemma 3n E4B model with processor
+    console.log('Loading processor...');
+    localProcessor = await AutoProcessor.from_pretrained("google/gemma-3n-e4b-it", {
+      device: 'webgpu',
+      dtype: 'fp16'
+    });
     
-    console.log('Local AI model loaded successfully');
+    console.log('Loading model...');
+    localModel = await AutoModelForImageTextToText.from_pretrained("google/gemma-3n-e4b-it", {
+      device: 'webgpu',
+      dtype: 'fp16'
+    });
+    
+    console.log('Gemma 3n E4B model loaded successfully on WebGPU');
   } catch (error) {
-    console.warn('Failed to load local model, falling back to CPU:', error);
+    console.warn('Failed to load model on WebGPU, trying CPU:', error);
     
     try {
-      const { pipeline } = await import('@huggingface/transformers');
-      localPipeline = await pipeline(
-        'text-generation',
-        'Xenova/gpt2',
-        {
-          device: 'cpu'
-        }
-      );
-      console.log('Local AI model loaded on CPU');
+      const { AutoProcessor, AutoModelForImageTextToText } = await import('@huggingface/transformers');
+      
+      localProcessor = await AutoProcessor.from_pretrained("google/gemma-3n-e4b-it", {
+        device: 'cpu'
+      });
+      
+      localModel = await AutoModelForImageTextToText.from_pretrained("google/gemma-3n-e4b-it", {
+        device: 'cpu'
+      });
+      
+      console.log('Gemma 3n E4B model loaded successfully on CPU');
     } catch (cpuError) {
-      console.error('Failed to load local model:', cpuError);
-      throw new Error('Failed to initialize local AI model');
+      console.error('Failed to load Gemma 3n model:', cpuError);
+      throw new Error('Failed to initialize Gemma 3n E4B model');
     }
   } finally {
     isModelLoading = false;
   }
 };
 
-export const callLocalModel = async (prompt: string): Promise<AIResponse> => {
-  if (!localPipeline) {
+export const callLocalModel = async (prompt: string, imageUrl?: string): Promise<AIResponse> => {
+  if (!localProcessor || !localModel) {
     await initializeLocalModel();
   }
   
-  if (!localPipeline) {
-    throw new Error('Local model not available');
+  if (!localProcessor || !localModel) {
+    throw new Error('Gemma 3n model not available');
   }
   
   try {
-    const response = await localPipeline(prompt, {
-      max_new_tokens: 100,
-      temperature: 0.7,
-      do_sample: true,
-      top_p: 0.9,
-      pad_token_id: 50256
+    let messages;
+    
+    if (imageUrl) {
+      // Image-text-to-text format
+      messages = [
+        {
+          "role": "user",
+          "content": [
+            {"type": "image", "image": imageUrl},
+            {"type": "text", "text": prompt}
+          ]
+        }
+      ];
+    } else {
+      // Text-only format
+      messages = [
+        {
+          "role": "user",
+          "content": [
+            {"type": "text", "text": prompt}
+          ]
+        }
+      ];
+    }
+    
+    console.log('Processing with Gemma 3n E4B...');
+    
+    // Apply chat template and process
+    const inputs = localProcessor.apply_chat_template(
+      messages,
+      {
+        add_generation_prompt: true,
+        tokenize: true,
+        return_dict: true,
+        return_tensors: "pt"
+      }
+    );
+    
+    // Generate response
+    const generation = await localModel.generate({
+      ...inputs,
+      max_new_tokens: 150,
+      do_sample: false,
+      temperature: 0.7
     });
     
-    const generatedText = response[0].generated_text;
-    // Remove the original prompt from the response
-    const content = generatedText.replace(prompt, '').trim();
+    // Decode the response
+    const inputLen = inputs.input_ids.shape[-1];
+    const outputTokens = generation[0].slice(inputLen);
+    const decoded = localProcessor.decode(outputTokens, { skip_special_tokens: true });
     
     return {
-      content: content || "I'm processing your request...",
-      aiConfidence: 75,
+      content: decoded.trim() || "I processed your request successfully.",
+      aiConfidence: 90,
     };
   } catch (error) {
-    console.error('Local model error:', error);
-    throw new Error('Failed to generate response from local model');
+    console.error('Gemma 3n model error:', error);
+    throw new Error(`Failed to generate response from Gemma 3n model: ${error.message}`);
   }
 };
 

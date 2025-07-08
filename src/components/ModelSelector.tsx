@@ -23,12 +23,12 @@ export const ModelSelector = ({
   const models = [
     {
       type: 'local' as ModelType,
-      name: 'Local AI',
-      description: 'Runs in your browser, no API key needed',
+      name: 'Gemma 3n E4B',
+      description: 'Google\'s multimodal AI running in your browser',
       icon: Cpu,
-      badge: 'Privacy First',
-      pros: ['No API costs', 'Privacy focused', 'Works offline'],
-      cons: ['Slower responses', 'Limited capabilities']
+      badge: 'Image + Text',
+      pros: ['No API costs', 'Privacy focused', 'Supports images', 'Works offline'],
+      cons: ['Slower initial loading', 'Requires WebGPU/CPU resources']
     },
     {
       type: 'api' as ModelType,
