@@ -1,17 +1,17 @@
-import { useState } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Coins, Zap, Key, AlertCircle } from "lucide-react";
-import { callOpenAI, generateAIResponse, type AIResponse } from "@/utils/aiService";
+import { Send, Bot, User, Key, AlertCircle } from "lucide-react";
+import { callGemini, generateMockResponse, type AIResponse } from "@/utils/aiService";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  tokenSymbol?: string;
   aiConfidence?: number;
 }
 
@@ -20,23 +20,34 @@ const Chat = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "👋 Hi! I'm MI, your personal crypto AI analyst powered by MemeX ecosystem. Ask me about any token, crypto trends, or get help with trading decisions. I can analyze OMEMEX, AMEMEX, and other tokens, predict prices, and help you stay safe in crypto!",
+      content: "👋 Hi! I'm your AI assistant powered by Gemini. I'm here to help answer any questions you have. Feel free to ask me anything!",
       timestamp: new Date(),
       aiConfidence: 100
     }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [geminiKey, setGeminiKey] = useState(
+    import.meta.env.VITE_GEMINI_API_KEY ?? ""
+  );
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const quickPrompts = [
-    "What is OMEMEX token?",
-    "Tell me about AMEMEX",
-    "Is Bitcoin safe to buy now?",
-    "Explain DeFi in simple terms",
-    "How to spot crypto scams?",
-    "Best AI crypto tokens 2024"
+    "What can you help me with?",
+    "Tell me about artificial intelligence",
+    "How does machine learning work?",
+    "Explain quantum computing",
+    "What's the weather like today?",
+    "Help me with coding"
   ];
 
   const handleSend = async () => {
@@ -57,30 +68,27 @@ const Chat = () => {
     try {
       let aiResponse: AIResponse;
       
-      if (apiKey) {
-        // Use real OpenAI API
-        aiResponse = await callOpenAI(currentInput, apiKey);
+      if (geminiKey?.trim()) {
+        aiResponse = await callGemini(currentInput, geminiKey.trim());
       } else {
-        // Fallback to scripted responses
-        aiResponse = generateAIResponse(currentInput);
+        aiResponse = generateMockResponse(currentInput);
       }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: aiResponse.content,
+        content: aiResponse.content || "I apologize, but I couldn't generate a response. Please try again.",
         timestamp: new Date(),
-        tokenSymbol: aiResponse.tokenSymbol,
         aiConfidence: aiResponse.aiConfidence
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('Gemini API error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "🚨 Sorry, I encountered an error processing your request. Please check your API key and try again, or I can provide basic responses without the API.",
+        content: "🚨 I encountered an error while processing your request. Please check your API key and try again.",
         timestamp: new Date(),
         aiConfidence: 0
       };
@@ -94,22 +102,27 @@ const Chat = () => {
     setInput(prompt);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 h-screen flex flex-col">
       {/* Header */}
       <div className="text-center space-y-4 mb-6">
         <div className="flex justify-center items-center space-x-3">
-          <img 
-            src="/lovable-uploads/22453a88-3fd8-494b-b1e4-949e4221cfec.png" 
-            alt="MemeX Token" 
-            className="w-8 h-8 rounded-full"
-          />
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            MI - Your Crypto AI Analyst
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            AI Assistant
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Powered by $MEMEX • Ask about any token, get instant analysis
+          Powered by Google Gemini • Ask me anything!
         </p>
         
         {/* API Key Section */}
@@ -121,7 +134,7 @@ const Chat = () => {
             className="text-xs"
           >
             <Key className="w-3 h-3 mr-1" />
-            {apiKey ? "✅ AI Connected" : "Connect OpenAI"}
+            {geminiKey ? "✅ API Connected" : "Connect API"}
           </Button>
         </div>
         
@@ -131,17 +144,25 @@ const Chat = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <AlertCircle className="w-4 h-4" />
-                  <span>Enter your OpenAI API key for enhanced AI responses</span>
+                  <span>Enter your Gemini API key for enhanced responses</span>
                 </div>
                 <Input
                   type="password"
-                  placeholder="sk-..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIza..."
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
                   className="text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Your API key is stored locally and used only for your requests.
+                  Get your free API key at{" "}
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-blue-600"
+                  >
+                    Google AI Studio
+                  </a>
                 </p>
               </div>
             </CardContent>
@@ -160,7 +181,7 @@ const Chat = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickPrompt(prompt)}
-                className="text-left h-auto p-3 whitespace-normal"
+                className="text-left h-auto p-3 whitespace-normal hover:bg-accent"
               >
                 {prompt}
               </Button>
@@ -187,7 +208,7 @@ const Chat = () => {
                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === "user"
                     ? "bg-blue-500"
-                    : "bg-gradient-to-r from-purple-500 to-pink-500"
+                    : "bg-gradient-to-r from-blue-500 to-purple-600"
                 }`}
               >
                 {message.role === "user" ? (
@@ -207,18 +228,11 @@ const Chat = () => {
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {message.content}
                   </p>
-                  {message.tokenSymbol && (
+                  {message.aiConfidence && message.role === "assistant" && (
                     <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-muted">
-                      <Badge variant="secondary" className="text-xs">
-                        <Coins className="w-3 h-3 mr-1" />
-                        {message.tokenSymbol}
+                      <Badge variant="outline" className="text-xs">
+                        {message.aiConfidence}% confidence
                       </Badge>
-                      {message.aiConfidence && (
-                        <Badge variant="outline" className="text-xs">
-                          <Zap className="w-3 h-3 mr-1" />
-                          {message.aiConfidence}% confidence
-                        </Badge>
-                      )}
                     </div>
                   )}
                 </CardContent>
@@ -229,21 +243,22 @@ const Chat = () => {
         
         {isLoading && (
           <div className="flex space-x-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
             <Card className="bg-background border">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                   <span className="text-sm text-muted-foreground">
-                    {apiKey ? "AI is thinking..." : "MI is thinking..."}
+                    AI is thinking...
                   </span>
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
@@ -251,16 +266,16 @@ const Chat = () => {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about any crypto token or trading strategy..."
+          placeholder="Ask me anything..."
           className="flex-1 text-base h-12"
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={handleKeyPress}
           disabled={isLoading}
         />
         <Button
           onClick={handleSend}
           disabled={!input.trim() || isLoading}
           size="lg"
-          className="px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          className="px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
         >
           <Send className="w-5 h-5" />
         </Button>
@@ -268,7 +283,7 @@ const Chat = () => {
 
       {/* Footer Note */}
       <p className="text-xs text-muted-foreground text-center mt-4">
-        ⚠️ AI responses are for educational purposes only. Not financial advice. DYOR.
+        🤖 AI responses are generated by Google Gemini
       </p>
     </div>
   );
