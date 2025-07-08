@@ -48,7 +48,17 @@ Please provide helpful, accurate, and engaging responses. If you're not certain 
     });
 
     if (!res.ok) {
-      throw new Error(`Gemini API error: ${res.status} ${res.statusText}`);
+      const errorData = await res.json().catch(() => ({}));
+      
+      if (res.status === 429) {
+        throw new Error("⏱️ API quota exceeded. Please wait a minute and try again, or check your usage at Google AI Studio.");
+      } else if (res.status === 403) {
+        throw new Error("🔑 Invalid API key. Please check your Gemini API key.");
+      } else if (res.status === 400) {
+        throw new Error("📝 Invalid request format. Please try rephrasing your question.");
+      } else {
+        throw new Error(`🚨 API Error (${res.status}): ${errorData.error?.message || res.statusText}`);
+      }
     }
 
     const json = await res.json();
