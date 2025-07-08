@@ -5,7 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Key, AlertCircle } from "lucide-react";
-import { callHuggingFace, generateMockResponse, type AIResponse } from "@/utils/aiService";
+import { 
+  callHuggingFace, 
+  callLocalModel, 
+  generateMockResponse, 
+  initializeLocalModel,
+  type AIResponse 
+} from "@/utils/aiService";
+import { ModelSelector, type ModelType } from "@/components/ModelSelector";
 
 interface Message {
   id: string;
@@ -20,7 +27,7 @@ const Chat = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "👋 Hi! I'm your AI assistant powered by Hugging Face. I'm here to help answer any questions you have. Feel free to ask me anything!",
+      content: "👋 Hi! I'm your AI assistant. I can run locally in your browser or use cloud APIs. Choose your preferred mode above and start chatting!",
       timestamp: new Date(),
       aiConfidence: 100
     }
@@ -31,6 +38,8 @@ const Chat = () => {
   const [hfKey, setHfKey] = useState(
     import.meta.env.VITE_HF_API_KEY ?? ""
   );
+  const [selectedModel, setSelectedModel] = useState<ModelType>('local');
+  const [isLocalModelLoading, setIsLocalModelLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -41,13 +50,32 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Initialize local model when selected
+  useEffect(() => {
+    if (selectedModel === 'local') {
+      setIsLocalModelLoading(true);
+      initializeLocalModel()
+        .then(() => {
+          console.log("Local model ready");
+        })
+        .catch((error) => {
+          console.error("Failed to initialize local model:", error);
+          // Fallback to mock mode
+          setSelectedModel('mock');
+        })
+        .finally(() => {
+          setIsLocalModelLoading(false);
+        });
+    }
+  }, [selectedModel]);
+
   const quickPrompts = [
     "What can you help me with?",
     "Tell me about artificial intelligence",
     "How does machine learning work?",
     "Explain quantum computing",
-    "What's the weather like today?",
-    "Help me with coding"
+    "Help me with coding",
+    "What's the latest in tech?"
   ];
 
   const handleSend = async () => {
@@ -68,10 +96,21 @@ const Chat = () => {
     try {
       let aiResponse: AIResponse;
       
-      if (hfKey?.trim()) {
-        aiResponse = await callHuggingFace(currentInput, hfKey.trim());
-      } else {
-        aiResponse = generateMockResponse(currentInput);
+      switch (selectedModel) {
+        case 'local':
+          aiResponse = await callLocalModel(currentInput);
+          break;
+        case 'api':
+          if (hfKey?.trim()) {
+            aiResponse = await callHuggingFace(currentInput, hfKey.trim());
+          } else {
+            throw new Error("API key required for cloud model");
+          }
+          break;
+        case 'mock':
+        default:
+          aiResponse = generateMockResponse(currentInput);
+          break;
       }
 
       const assistantMessage: Message = {
@@ -84,11 +123,11 @@ const Chat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Hugging Face API error:', error);
+      console.error('AI Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "🚨 I encountered an error while processing your request. Please check your API key and try again.",
+        content: `🚨 ${error instanceof Error ? error.message : 'An error occurred while processing your request.'}`,
         timestamp: new Date(),
         aiConfidence: 0
       };
@@ -109,6 +148,13 @@ const Chat = () => {
     }
   };
 
+  const handleModelChange = (model: ModelType) => {
+    setSelectedModel(model);
+    if (model === 'api' && !hfKey) {
+      setShowApiKeyInput(true);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 h-screen flex flex-col">
       {/* Header */}
@@ -122,11 +168,20 @@ const Chat = () => {
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Powered by Hugging Face • Ask me anything!
+          Local AI • Cloud AI • Your Choice
         </p>
-        
-        {/* API Key Section */}
-        <div className="flex justify-center">
+      </div>
+
+      {/* Model Selector */}
+      <ModelSelector 
+        selectedModel={selectedModel}
+        onModelChange={handleModelChange}
+        isLocalModelLoading={isLocalModelLoading}
+      />
+
+      {/* API Key Section */}
+      {selectedModel === 'api' && (
+        <div className="flex justify-center mb-4">
           <Button
             variant="outline"
             size="sm"
@@ -137,38 +192,38 @@ const Chat = () => {
             {hfKey ? "✅ API Connected" : "Connect API"}
           </Button>
         </div>
-        
-        {showApiKeyInput && (
-          <Card className="max-w-md mx-auto">
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Enter your Hugging Face API key for enhanced responses</span>
-                </div>
-                <Input
-                  type="password"
-                  placeholder="hf_..."
-                  value={hfKey}
-                  onChange={(e) => setHfKey(e.target.value)}
-                  className="text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Get your free API key at{" "}
-                  <a
-                    href="https://huggingface.co/settings/tokens"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-blue-600"
-                  >
-                    Hugging Face Settings
-                  </a>
-                </p>
+      )}
+      
+      {showApiKeyInput && (
+        <Card className="max-w-md mx-auto mb-6">
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <AlertCircle className="w-4 h-4" />
+                <span>Enter your Hugging Face API key for cloud AI</span>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              <Input
+                type="password"
+                placeholder="hf_..."
+                value={hfKey}
+                onChange={(e) => setHfKey(e.target.value)}
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Get your free API key at{" "}
+                <a
+                  href="https://huggingface.co/settings/tokens"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-600"
+                >
+                  Hugging Face Settings
+                </a>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Prompts */}
       {messages.length <= 1 && (
@@ -233,6 +288,9 @@ const Chat = () => {
                       <Badge variant="outline" className="text-xs">
                         {message.aiConfidence}% confidence
                       </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedModel === 'local' ? 'Local' : selectedModel === 'api' ? 'Cloud' : 'Demo'}
+                      </Badge>
                     </div>
                   )}
                 </CardContent>
@@ -241,7 +299,7 @@ const Chat = () => {
           </div>
         ))}
         
-        {isLoading && (
+        {(isLoading || isLocalModelLoading) && (
           <div className="flex space-x-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
@@ -251,7 +309,7 @@ const Chat = () => {
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                   <span className="text-sm text-muted-foreground">
-                    AI is thinking...
+                    {isLocalModelLoading ? "Loading AI model..." : "AI is thinking..."}
                   </span>
                 </div>
               </CardContent>
@@ -269,11 +327,11 @@ const Chat = () => {
           placeholder="Ask me anything..."
           className="flex-1 text-base h-12"
           onKeyDown={handleKeyPress}
-          disabled={isLoading}
+          disabled={isLoading || isLocalModelLoading}
         />
         <Button
           onClick={handleSend}
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || isLoading || isLocalModelLoading}
           size="lg"
           className="px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
         >
@@ -283,7 +341,7 @@ const Chat = () => {
 
       {/* Footer Note */}
       <p className="text-xs text-muted-foreground text-center mt-4">
-        🤖 AI responses are generated by Hugging Face
+        🤖 Choose between local privacy-first AI or cloud-powered responses
       </p>
     </div>
   );

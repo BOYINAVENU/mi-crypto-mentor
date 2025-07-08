@@ -5,10 +5,9 @@ export interface AIResponse {
   aiConfidence: number;
 }
 
-/** Hugging Face Inference API endpoint */
+// API-based approach (existing)
 const HF_INFERENCE_ENDPOINT = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium";
 
-/** 🔥 Primary function to call Hugging Face */
 export const callHuggingFace = async (
     prompt: string,
     apiKey: string
@@ -69,7 +68,84 @@ export const callHuggingFace = async (
   }
 };
 
-/** 🧪 Fallback if no key is provided or Hugging Face fails */
+// Local model approach (new)
+let localPipeline: any = null;
+let isModelLoading = false;
+
+export const initializeLocalModel = async (): Promise<void> => {
+  if (localPipeline || isModelLoading) return;
+  
+  isModelLoading = true;
+  
+  try {
+    // Dynamic import to avoid build issues
+    const { pipeline } = await import('@huggingface/transformers');
+    
+    // Initialize a smaller, faster model for chat
+    localPipeline = await pipeline(
+      'text-generation',
+      'Xenova/gpt2',
+      {
+        device: 'webgpu',
+        dtype: 'fp16'
+      }
+    );
+    
+    console.log('Local AI model loaded successfully');
+  } catch (error) {
+    console.warn('Failed to load local model, falling back to CPU:', error);
+    
+    try {
+      const { pipeline } = await import('@huggingface/transformers');
+      localPipeline = await pipeline(
+        'text-generation',
+        'Xenova/gpt2',
+        {
+          device: 'cpu'
+        }
+      );
+      console.log('Local AI model loaded on CPU');
+    } catch (cpuError) {
+      console.error('Failed to load local model:', cpuError);
+      throw new Error('Failed to initialize local AI model');
+    }
+  } finally {
+    isModelLoading = false;
+  }
+};
+
+export const callLocalModel = async (prompt: string): Promise<AIResponse> => {
+  if (!localPipeline) {
+    await initializeLocalModel();
+  }
+  
+  if (!localPipeline) {
+    throw new Error('Local model not available');
+  }
+  
+  try {
+    const response = await localPipeline(prompt, {
+      max_new_tokens: 100,
+      temperature: 0.7,
+      do_sample: true,
+      top_p: 0.9,
+      pad_token_id: 50256
+    });
+    
+    const generatedText = response[0].generated_text;
+    // Remove the original prompt from the response
+    const content = generatedText.replace(prompt, '').trim();
+    
+    return {
+      content: content || "I'm processing your request...",
+      aiConfidence: 75,
+    };
+  } catch (error) {
+    console.error('Local model error:', error);
+    throw new Error('Failed to generate response from local model');
+  }
+};
+
 export const generateMockResponse = (prompt: string): AIResponse => {
   const responses = [
     `I'd be happy to help with "${prompt}", but I need a Hugging Face API key to provide detailed responses. You can get one free at Hugging Face!`,
